@@ -1,0 +1,371 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="description" content="Web Chat - Realtime messaging platform built for easy, secure communication.">
+<meta name="keywords" content="chat app, messaging, realtime, secure chat, webchat">
+<meta name="author" content="Your Name">
+
+  <title>Web Chat</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin:0; background:#f4f7fa; color:#333; }
+    .container { max-width: 480px; margin:auto; padding:20px; }
+    h2, h3, h4 { text-align:center; color:#2c3e50; }
+    input, select, textarea, button { width:100%; padding:12px; margin:8px 0; font-size:16px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
+    button { background:#3498db; color:#fff; border:none; cursor:pointer; transition:0.3s; }
+    button:hover { background:#2980b9; }
+    .chat-box { height:300px; overflow-y:auto; background:#fff; border:1px solid #ccc; border-radius:6px; padding:10px; margin:15px 0; }
+    .message { margin:6px 0; display:flex; flex-direction:column; max-width:40%; padding:8px 12px; border-radius:12px; background:#ecf0f1; position:relative; clear:both; }
+    .message.right { align-self:flex-end;margin-left: 50%; background:#dcf8c6; color:#000; }
+    .message.left { align-self:flex-start; background:#e0e0e0; color:#333; }
+    .timestamp { font-size:12px; color:#888; margin-top:4px; }
+    .seen-status { margin-left:6px; font-weight:bold; }
+    #userList { list-style:none; padding:0; max-height:220px; overflow-y:auto; margin:15px 0; }
+    #userList li { padding:10px; background:#ecf0f1; margin-bottom:6px; border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:0.2s; }
+    #userList li:hover { background:#d0e4f1; }
+    .navbar { background:#2c3e50; padding:10px 20px; color:white; text-align:center; font-size:18px; position:relative; }
+    .navbar span#navbarMessages { position:absolute; right:20px; top:10px; background:red; border-radius:50%; padding:2px 6px; font-size:12px; display:none; }
+    #unreadPanel {
+      display: none;
+      position: absolute;
+      top: 50px;
+      right: 20px;
+      background: white;
+      list-style: none;
+      padding: 10px;
+      border-radius: 6px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.3);
+      width: 200px;
+      z-index: 999;
+    }
+    #unreadPanel li {
+      cursor: pointer;
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+    }
+    #unreadPanel li:hover {
+      background: #f0f0f0;
+    }
+    #buttonn {
+      margin-left: 60px;
+      margin-top: 0px;
+      width: 83px;
+      height: 38px;
+    }
+    #backButton { background: #e74c3c; margin-bottom: 10px; }
+    @media(max-width:600px){
+      .chat-box { height:220px; }
+      input, select,textarea, button { font-size:14px; padding:10px; }
+    }
+    #about{
+        margin-top: 30px;
+        width: 90px;
+        height: 50px;
+    }
+  </style>
+</head>
+<body>
+    <!-- Add this inside your <body> tag -->
+
+
+<!-- Add this at the end of your main container, before <hr> -->
+
+
+
+
+  <div class="navbar">
+    Web Chat
+    <button id="buttonn" onclick="toggleUnreadPanel()" style="position:absolute; right:10px; top:7px;">Messages</button>
+    <span id="navbarMessages"></span>
+  </div>
+  <button onclick="showInfo('about')" id="about">About</button>
+
+  <div id="infoSection" style="display:none;" class="container">
+  <button onclick="backToMain()" style="background:#e67e22; margin-bottom:10px;">← Back</button>
+  <div id="aboutContent" style="display:none;">
+    <h3>About Us</h3>
+    <p>Welcome to Web Chat, a real-time messaging platform designed for seamless, secure communication. Connect with others based on gender and state preferences, and enjoy a responsive experience on any device. Created by passionate developers to empower communication since 2022.</p>
+  </div>
+  <div id="contactContent" style="display:none;">
+    <h3>Contact</h3>
+    <p>Email: support@webchat.com</p>
+    <p>Phone: +91-9876543210</p>
+    <p>Address: Web Chat HQ, Hyderabad, India</p>
+  </div>
+  <div id="privacyContent" style="display:none;">
+    <h3>Privacy Policy</h3>
+    <p>We value your privacy. All messages are end-to-end encrypted and stored securely. We never sell your data or misuse personal information. By using Web Chat, you agree to our safe communication practices.</p>
+  </div>
+</div>
+  <ul id="unreadPanel"></ul>
+
+  <div class="container">
+    <div id="authSection">
+      <h2>Welcome</h2>
+      <input id="username" placeholder="Username">
+      <input id="password" type="password" placeholder="Password">
+
+      <select id="authMode">
+        <option value="login">Login</option>
+        <option value="register">Register</option>
+      </select>
+      <select id="gender" style="display:none;">
+        <option value="">Select Gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+      <select id="state" style="display:none;">
+        <option value="">Select State</option>
+        <option>Andhra Pradesh</option><option>Telangana</option><option>Karnataka</option>
+        <option>Tamil Nadu</option><option>Maharashtra</option><option>Kerala</option>
+        <option>Uttar Pradesh</option><option>West Bengal</option>
+      </select>
+      <button onclick="handleAuth()">Submit</button>
+      <p>Note:- You Should Remember Your Login Id (UserName)</p>
+    </div>
+
+    <div id="chatSection" style="display:none;">
+      <h3>Hello, <span id="loggedUser"></span></h3>
+      <select id="filter" onchange="loadUsers()">
+        <option value="">All</option><option value="male">Male</option><option value="female">Female</option>
+      </select>
+      <ul id="userList"></ul>
+
+      <div id="chatArea" style="display:none;">
+        <button id="backButton" onclick="backToUsers()">← Back</button>
+        <h4>Chat with <span id="chatWith"></span></h4>
+        <div class="chat-box" id="chatBox"></div>
+        <textarea id="chatMessage" placeholder="Type your message..."></textarea>
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  <button onclick="showInfo('privacy')">Privacy Policy</button>
+
+    <hr>
+    <p>@all copy rights belongs to web-chat</p>
+  </div>
+
+<script>
+function showInfo(section) {
+  authSection.style.display = 'none';
+  chatSection.style.display = 'none';
+  infoSection.style.display = 'block';
+
+  aboutContent.style.display = 'none';
+  contactContent.style.display = 'none';
+  privacyContent.style.display = 'none';
+
+  if (section === 'about') aboutContent.style.display = 'block';
+  else if (section === 'contact') contactContent.style.display = 'block';
+  else if (section === 'privacy') privacyContent.style.display = 'block';
+}
+
+function backToMain() {
+  infoSection.style.display = 'none';
+  if (currentUser) {
+    chatSection.style.display = 'block';
+  } else {
+    authSection.style.display = 'block';
+  }
+}
+
+
+
+let socket, currentUser, currentReceiver, unreadTotal = 0;
+
+authMode.onchange = () => {
+  const reg = authMode.value === 'register';
+  gender.style.display = state.style.display = reg ? 'block' : 'none';
+};
+
+function toggleUnreadPanel() {
+  const panel = document.getElementById('unreadPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateNavbarBadge() {
+  const badge = document.getElementById('navbarMessages');
+  badge.textContent = unreadTotal;
+  badge.style.display = unreadTotal > 0 ? 'inline' : 'none';
+}
+
+function updateUnreadPanel(users) {
+  const panel = document.getElementById('unreadPanel');
+  panel.innerHTML = '';
+  users.filter(u => u.unreadCount > 0).forEach(u => {
+    const li = document.createElement('li');
+    li.textContent = `${u.username} (${u.unreadCount})`;
+    li.onclick = () => {
+      toggleUnreadPanel();
+      openChat(u);
+    };
+    panel.appendChild(li);
+  });
+}
+
+async function handleAuth() {
+  const mode = authMode.value;
+  const data = { username: username.value.trim(), password: password.value };
+  if (mode === 'register') {
+    data.gender = gender.value;
+    data.state = state.value;
+    if (!data.username || !data.password || !data.gender || !data.state) return alert('Fill all');
+  } else if (!data.username || !data.password) return alert('Fill all');
+
+  const res = await fetch(`/${mode}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) return alert((await res.json()).msg || 'Failed');
+  currentUser = await res.json();
+
+  authSection.style.display = 'none';
+  chatSection.style.display = 'block';
+  loggedUser.textContent = currentUser.username;
+
+  socket = io();
+  socket.emit('register_user', currentUser._id);
+  socket.on('user_list_update', loadUsers);
+  socket.on('new_message', msg => {
+  if (msg.sender?.toString() === currentUser._id?.toString()) return; // 🛡️ Avoid showing self-message
+
+  if (
+    currentReceiver &&
+    (msg.sender?.toString() === currentReceiver._id?.toString() ||
+     msg.receiver?.toString() === currentReceiver._id?.toString())
+  ) {
+    displayMessage(msg); // ✅ Show only if chatting with them
+    fetch(`/messages/read/${currentUser._id}/${msg.sender}`, { method: 'PUT' });
+  } else {
+    unreadTotal++;
+    updateNavbarBadge();
+  }
+console.log('msg.sender:', msg.sender, 'currentReceiver._id:', currentReceiver?._id);
+
+  loadUsers(); // ✅ update unread badges, etc.
+});
+
+
+  socket.on('messages_seen', ({ from }) => {
+    if (currentReceiver && currentReceiver._id === from) {
+      document.querySelectorAll('.message.right .seen-status').forEach(e => {
+        e.innerHTML = '✓✓';
+        e.style.color = '#2196f3';
+      });
+    }
+  });
+
+  loadUsers();
+}
+
+async function loadUsers() {
+  const res = await fetch(`/users/${currentUser._id}?category=${filter.value}&state=${currentUser.state}`);
+  const users = await res.json();
+
+  userList.innerHTML = '';
+  unreadTotal = 0;
+
+  // 👉 Sort same-state users to the top
+  users.sort((a, b) => {
+    if (a.state === currentUser.state && b.state !== currentUser.state) return -1;
+    if (a.state !== currentUser.state && b.state === currentUser.state) return 1;
+    return 0;
+  });
+
+  users.forEach(u => {
+    if (u.unreadCount) unreadTotal += u.unreadCount;
+    const li = document.createElement('li');
+    const genderLabel = u.gender === 'male' ? 'M' : 'F';
+    const unreadDot = u.unreadCount > 0 ? `<span style="color:red;font-size:18px;">●</span>` : '';
+    li.innerHTML = `<span>${u.username} (${genderLabel}) ${unreadDot}</span><span style="font-size:12px;color:#555;">${u.state}</span>`;
+    li.onclick = () => openChat(u);
+    userList.appendChild(li);
+  });
+
+  updateNavbarBadge();
+  updateUnreadPanel(users);
+}
+
+
+async function openChat(u) {
+  currentReceiver = u;
+  chatWith.textContent = u.username;
+  chatBox.innerHTML = '';
+  chatMessage.value = '';
+  chatArea.style.display = 'block';
+  userList.style.display = 'none';
+  filter.style.display = 'none';
+
+  await fetch(`/messages/read/${currentUser._id}/${u._id}`, { method: 'PUT' });
+  const res = await fetch(`/messages/${currentUser._id}/${u._id}`);
+  const msgs = await res.json();
+  msgs.forEach(displayMessage);
+
+  unreadTotal = 0;
+  loadUsers();
+}
+
+function backToUsers() {
+  chatArea.style.display = 'none';
+  userList.style.display = 'block';
+  filter.style.display = 'block';
+  currentReceiver = null;
+}
+
+function formatTime(t) {
+  const d = t ? new Date(t) : new Date();
+  let h = d.getHours() % 12 || 12,
+      m = d.getMinutes().toString().padStart(2, '0'),
+      ap = d.getHours() >= 12 ? 'PM' : 'AM';
+  return `${h}:${m} ${ap}`;
+}
+
+function displayMessage(msg) {
+  const div = document.createElement('div');
+  const isMine = msg.sender === currentUser._id;
+  div.className = 'message ' + (isMine ? 'right' : 'left');
+
+  const seenStatus = isMine
+    ? `<span class="seen-status" style="float:right; font-size:14px; color: ${msg.seen ? '#2196f3' : '#aaa'};">
+        ${msg.seen ? '✓✓' : '✓'}
+      </span>`
+    : '';
+
+  div.innerHTML = `
+    <strong>${isMine ? 'You' : currentReceiver.username}:</strong> ${msg.message}
+    <span class="timestamp">${formatTime(msg.timestamp)} ${seenStatus}</span>
+  `;
+
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function sendMessage() {
+  if (!currentReceiver) return alert('Select user');
+  const text = chatMessage.value.trim();
+  if (!text) return;
+
+  const msg = {
+    senderId: currentUser._id,
+    receiverId: currentReceiver._id,
+    message: text
+  };
+
+  socket.emit('send_message', msg); // 🚀 Send to server
+ displayMessage({
+    sender: currentUser._id, // 👈 so the right-side logic works
+    receiver: currentReceiver._id,
+    message: text,
+    timestamp: new Date()
+  });
+
+  chatMessage.value = '';
+}
+
+// displayMessage(msg);
+</script>
+</body>
+</html>

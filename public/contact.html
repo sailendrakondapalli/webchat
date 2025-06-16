@@ -1,0 +1,37 @@
+<!-- public/contact.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contact Us - Web Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Contact the Web Chat team for support, questions, or inquiries.">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f9f9f9; }
+    header, footer { text-align: center; padding: 20px; background: #3498db; color: white; }
+    main { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    form { display: flex; flex-direction: column; gap: 10px; }
+    input, textarea { padding: 10px; border-radius: 4px; border: 1px solid #ccc; }
+    button { background: #3498db; color: white; padding: 10px; border: none; border-radius: 5px; }
+    button:hover { background: #2980b9; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Contact Us</h1>
+  </header>
+  <main>
+    <p>If you have any questions, feedback, or inquiries, feel free to reach out using the form below or by emailing us directly.</p>
+
+    <form action="mailto:sailendrakondapalli2001@gmail.com" method="POST" enctype="text/plain">
+      <input type="text" name="name" placeholder="Your Name" required />
+      <input type="email" name="email" placeholder="Your Email" required />
+      <textarea name="message" placeholder="Your Message" rows="6" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </main>
+  <footer>
+    &copy; 2025 Web Chat. All rights reserved.
+  </footer>
+</body>
+</html>
