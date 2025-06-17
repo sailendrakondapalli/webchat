@@ -243,7 +243,6 @@ async function handleAuth() {
     unreadTotal++;
     updateNavbarBadge();
   }
-console.log('msg.sender:', msg.sender, 'currentReceiver._id:', currentReceiver?._id);
 
   loadUsers(); // ✅ update unread badges, etc.
 });
