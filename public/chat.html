@@ -1,372 +1,245 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta name="google-adsense-account" content="ca-pub-4906962969301207">
-  
-    <meta name="description" content="Web Chat - Realtime messaging platform built for easy, secure communication.">
-<meta name="keywords" content="chat app, messaging, realtime, secure chat, webchat">
-<meta name="author" content="Your Name">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Chat App</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { display: flex; height: 100vh; background-color: #e5ddd5; }
 
-  <title>Web Chat</title>
-  <script src="/socket.io/socket.io.js"></script>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body { font-family: 'Segoe UI', sans-serif; margin:0; background:#f4f7fa; color:#333; }
-    .container { max-width: 480px; margin:auto; padding:20px; }
-    h2, h3, h4 { text-align:center; color:#2c3e50; }
-    input, select, textarea, button { width:100%; padding:12px; margin:8px 0; font-size:16px; border-radius:6px; border:1px solid #ccc; box-sizing:border-box; }
-    button { background:#3498db; color:#fff; border:none; cursor:pointer; transition:0.3s; }
-    button:hover { background:#2980b9; }
-    .chat-box { height:300px; overflow-y:auto; background:#fff; border:1px solid #ccc; border-radius:6px; padding:10px; margin:15px 0; }
-    .message { margin:6px 0; display:flex; flex-direction:column; max-width:40%; padding:8px 12px; border-radius:12px; background:#ecf0f1; position:relative; clear:both; }
-    .message.right { align-self:flex-end;margin-left: 50%; background:#dcf8c6; color:#000; }
-    .message.left { align-self:flex-start; background:#e0e0e0; color:#333; }
-    .timestamp { font-size:12px; color:#888; margin-top:4px; }
-    .seen-status { margin-left:6px; font-weight:bold; }
-    #userList { list-style:none; padding:0; max-height:220px; overflow-y:auto; margin:15px 0; }
-    #userList li { padding:10px; background:#ecf0f1; margin-bottom:6px; border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:0.2s; }
-    #userList li:hover { background:#d0e4f1; }
-    .navbar { background:#2c3e50; padding:10px 20px; color:white; text-align:center; font-size:18px; position:relative; }
-    .navbar span#navbarMessages { position:absolute; right:20px; top:10px; background:red; border-radius:50%; padding:2px 6px; font-size:12px; display:none; }
-    #unreadPanel {
-      display: none;
-      position: absolute;
-      top: 50px;
-      right: 20px;
-      background: white;
-      list-style: none;
-      padding: 10px;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.3);
-      width: 200px;
-      z-index: 999;
-    }
-    #unreadPanel li {
-      cursor: pointer;
-      padding: 8px 10px;
-      border-bottom: 1px solid #eee;
-    }
-    #unreadPanel li:hover {
-      background: #f0f0f0;
-    }
-    #buttonn {
-      margin-left: 60px;
-      margin-top: 0px;
-      width: 83px;
-      height: 38px;
-    }
-    #backButton { background: #e74c3c; margin-bottom: 10px; }
-    @media(max-width:600px){
-      .chat-box { height:220px; }
-      input, select,textarea, button { font-size:14px; padding:10px; }
-    }
-    #about{
-        margin-top: 30px;
-        width: 90px;
-        height: 50px;
-    }
-  </style>
+  /* Auth forms */
+  #auth { position: absolute; top:0; left:0; right:0; bottom:0; background: #f0f0f0; display:flex; justify-content:center; align-items:center; z-index: 100; }
+  #auth form { background: white; padding: 30px; border-radius: 10px; width: 300px; box-shadow: 0 0 10px rgba(0,0,0,0.2); display:flex; flex-direction:column; gap: 15px; }
+  #auth input, #auth select { padding:10px; border-radius:5px; border:1px solid #ccc; width:100%; }
+  #auth button { padding:10px; border:none; border-radius:5px; background:#4CAF50; color:white; cursor:pointer; }
+  #auth button:hover { background:#45a049; }
+  #auth .switch { text-align:center; font-size:14px; cursor:pointer; color:#555; }
+
+  /* Toggle sidebar button for mobile */
+  #toggleUsers { display:none; position: absolute; top: 15px; left: 15px; background-color: #4CAF50; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; z-index: 11; }
+
+  /* Sidebar Users */
+  #users { width: 280px; background-color: #f0f0f0; display: flex; flex-direction: column; border-right: 1px solid #ccc; overflow-y: auto; }
+  #users h2 { padding: 15px; background-color: #4CAF50; color: white; text-align: center; }
+  .user { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #ddd; }
+  .user:hover { background-color: #e0e0e0; }
+  .user .info { display: flex; flex-direction: column; }
+  .user .username { font-weight: bold; font-size: 16px; }
+  .user .state { font-size: 12px; color: #555; }
+  .user .unread { background-color: red; color: white; font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 50%; }
+  .user .online { width: 10px; height: 10px; background-color: #4CAF50; border-radius: 50%; margin-left: 8px; }
+
+  /* Chat Window */
+  #chat { flex: 1; display: flex; flex-direction: column; }
+  #messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .message { max-width: 70%; padding: 10px 14px; border-radius: 15px; word-wrap: break-word; position: relative; }
+  .sent { background-color: #dcf8c6; align-self: flex-end; border-bottom-right-radius: 0; }
+  .received { background-color: white; align-self: flex-start; border-bottom-left-radius: 0; }
+  .timestamp { font-size: 10px; color: #888; margin-top: 3px; text-align: right; }
+
+  /* Typing indicator */
+  #typing { font-size: 12px; color: #555; padding-left:10px; }
+
+  /* Input Bar */
+  #input { display: flex; padding: 10px; background-color: #f0f0f0; border-top: 1px solid #ccc; }
+  #input input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ccc; outline: none; margin-right: 10px; }
+  #input button { padding: 12px 20px; border: none; border-radius: 20px; background-color: #4CAF50; color: white; cursor: pointer; transition: background 0.2s; }
+  #input button:hover { background-color: #45a049; }
+
+  /* Scrollbar */
+  #messages::-webkit-scrollbar, #users::-webkit-scrollbar { width: 6px; }
+  #messages::-webkit-scrollbar-thumb, #users::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+  /* Responsive */
+  @media(max-width: 768px){
+    #users { width: 60%; position: absolute; z-index: 10; height: 100%; left: -100%; transition: left 0.3s; }
+    #users.show { left: 0; }
+    #toggleUsers { display:block; }
+  }
+</style>
 </head>
 <body>
-    <!-- Add this inside your <body> tag -->
 
+<!-- Auth forms -->
+<div id="auth">
+  <form id="loginForm">
+    <h3>Login</h3>
+    <input type="text" id="loginUsername" placeholder="Username" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
+    <button type="submit">Login</button>
+    <div class="switch" onclick="showRegister()">Don't have an account? Register</div>
+  </form>
 
-<!-- Add this at the end of your main container, before <hr> -->
+  <form id="registerForm" style="display:none;">
+    <h3>Register</h3>
+    <input type="text" id="regUsername" placeholder="Username" required>
+    <input type="password" id="regPassword" placeholder="Password" required>
+    <select id="regGender" required>
+      <option value="">Select Gender</option>
+      <option value="Male">Male</option>
+      <option value="Female">Female</option>
+      <option value="Other">Other</option>
+    </select>
+    <input type="text" id="regState" placeholder="State" required>
+    <button type="submit">Register</button>
+    <div class="switch" onclick="showLogin()">Already have an account? Login</div>
+  </form>
+</div>
 
+<button id="toggleUsers">☰</button>
 
+<div id="users">
+  <h2>Contacts</h2>
+</div>
 
-
-  <div class="navbar">
-    Web Chat
-    <button id="buttonn" onclick="toggleUnreadPanel()" style="position:absolute; right:10px; top:7px;">Messages</button>
-    <span id="navbarMessages"></span>
-  </div>
-  <button onclick="showInfo('about')" id="about">About</button>
-
-  <div id="infoSection" style="display:none;" class="container">
-  <button onclick="backToMain()" style="background:#e67e22; margin-bottom:10px;">← Back</button>
-  <div id="aboutContent" style="display:none;">
-    <h3>About Us</h3>
-    <p>Welcome to Web Chat, a real-time messaging platform designed for seamless, secure communication. Connect with others based on gender and state preferences, and enjoy a responsive experience on any device. Created by passionate developers to empower communication since 2022.</p>
-  </div>
-  <div id="contactContent" style="display:none;">
-    <h3>Contact</h3>
-    <p>Email: support@webchat.com</p>
-    <p>Phone: +91-9876543210</p>
-    <p>Address: Web Chat HQ, Hyderabad, India</p>
-  </div>
-  <div id="privacyContent" style="display:none;">
-    <h3>Privacy Policy</h3>
-    <p>We value your privacy. All messages are end-to-end encrypted and stored securely. We never sell your data or misuse personal information. By using Web Chat, you agree to our safe communication practices.</p>
+<div id="chat">
+  <div id="messages"></div>
+  <div id="typing"></div>
+  <div id="input">
+    <input type="text" id="messageInput" placeholder="Type a message... 😊" />
+    <button id="sendBtn">Send</button>
   </div>
 </div>
-  <ul id="unreadPanel"></ul>
 
-  <div class="container">
-    <div id="authSection">
-      <h2>Welcome</h2>
-      <input id="username" placeholder="Username">
-      <input id="password" type="password" placeholder="Password">
-
-      <select id="authMode">
-        <option value="login">Login</option>
-        <option value="register">Register</option>
-      </select>
-      <select id="gender" style="display:none;">
-        <option value="">Select Gender</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-      </select>
-      <select id="state" style="display:none;">
-        <option value="">Select State</option>
-        <option>Andhra Pradesh</option><option>Telangana</option><option>Karnataka</option>
-        <option>Tamil Nadu</option><option>Maharashtra</option><option>Kerala</option>
-        <option>Uttar Pradesh</option><option>West Bengal</option>
-      </select>
-      <button onclick="handleAuth()">Submit</button>
-      <p>Note:- You Should Remember Your Login Id (UserName)</p>
-    </div>
-
-    <div id="chatSection" style="display:none;">
-      <h3>Hello, <span id="loggedUser"></span></h3>
-      <select id="filter" onchange="loadUsers()">
-        <option value="">All</option><option value="male">Male</option><option value="female">Female</option>
-      </select>
-      <ul id="userList"></ul>
-
-      <div id="chatArea" style="display:none;">
-        <button id="backButton" onclick="backToUsers()">← Back</button>
-        <h4>Chat with <span id="chatWith"></span></h4>
-        <div class="chat-box" id="chatBox"></div>
-        <textarea id="chatMessage" placeholder="Type your message..."></textarea>
-        <button onclick="sendMessage()">Send</button>
-      </div>
-    </div>
-  <button onclick="showInfo('privacy')">Privacy Policy</button>
-
-    <hr>
-    <p>@all copy rights belongs to web-chat</p>
-  </div>
-
+<script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
 <script>
-function showInfo(section) {
-  authSection.style.display = 'none';
-  chatSection.style.display = 'none';
-  infoSection.style.display = 'block';
+const socket = io("http://localhost:5000");
+let currentUser = null;
+let selectedUser = null;
+let users = [];
 
-  aboutContent.style.display = 'none';
-  contactContent.style.display = 'none';
-  privacyContent.style.display = 'none';
+// Toggle sidebar on mobile
+const toggleBtn = document.getElementById('toggleUsers');
+toggleBtn.onclick = () => document.getElementById('users').classList.toggle('show');
 
-  if (section === 'about') aboutContent.style.display = 'block';
-  else if (section === 'contact') contactContent.style.display = 'block';
-  else if (section === 'privacy') privacyContent.style.display = 'block';
-}
+// Auth form switches
+function showRegister(){ document.getElementById('loginForm').style.display='none'; document.getElementById('registerForm').style.display='flex'; }
+function showLogin(){ document.getElementById('loginForm').style.display='flex'; document.getElementById('registerForm').style.display='none'; }
 
-function backToMain() {
-  infoSection.style.display = 'none';
-  if (currentUser) {
-    chatSection.style.display = 'block';
-  } else {
-    authSection.style.display = 'block';
-  }
-}
-
-
-
-let socket, currentUser, currentReceiver, unreadTotal = 0;
-
-authMode.onchange = () => {
-  const reg = authMode.value === 'register';
-  gender.style.display = state.style.display = reg ? 'block' : 'none';
-};
-
-function toggleUnreadPanel() {
-  const panel = document.getElementById('unreadPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function updateNavbarBadge() {
-  const badge = document.getElementById('navbarMessages');
-  badge.textContent = unreadTotal;
-  badge.style.display = unreadTotal > 0 ? 'inline' : 'none';
-}
-
-function updateUnreadPanel(users) {
-  const panel = document.getElementById('unreadPanel');
-  panel.innerHTML = '';
-  users.filter(u => u.unreadCount > 0).forEach(u => {
-    const li = document.createElement('li');
-    li.textContent = `${u.username} (${u.unreadCount})`;
-    li.onclick = () => {
-      toggleUnreadPanel();
-      openChat(u);
-    };
-    panel.appendChild(li);
-  });
-}
-
-async function handleAuth() {
-  const mode = authMode.value;
-  const data = { username: username.value.trim(), password: password.value };
-  if (mode === 'register') {
-    data.gender = gender.value;
-    data.state = state.value;
-    if (!data.username || !data.password || !data.gender || !data.state) return alert('Fill all');
-  } else if (!data.username || !data.password) return alert('Fill all');
-
-  const res = await fetch(`/${mode}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  if (!res.ok) return alert((await res.json()).msg || 'Failed');
-  currentUser = await res.json();
-
-  authSection.style.display = 'none';
-  chatSection.style.display = 'block';
-  loggedUser.textContent = currentUser.username;
-
-  socket = io();
+// Login form
+document.getElementById('loginForm').onsubmit = async e=>{
+  e.preventDefault();
+  const username=document.getElementById('loginUsername').value;
+  const password=document.getElementById('loginPassword').value;
+  const res=await fetch('http://localhost:5000/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+  const data=await res.json();
+  if(res.status!==200) return alert(data.msg||'Login failed');
+  currentUser=data;
+  document.getElementById('auth').style.display='none';
   socket.emit('register_user', currentUser._id);
-  socket.on('user_list_update', loadUsers);
-  socket.on('new_message', msg => {
-  if (msg.sender?.toString() === currentUser._id?.toString()) return; // 🛡️ Avoid showing self-message
+  loadUsers();
+}
 
-  if (
-    currentReceiver &&
-    (msg.sender?.toString() === currentReceiver._id?.toString() ||
-     msg.receiver?.toString() === currentReceiver._id?.toString())
-  ) {
-    displayMessage(msg); // ✅ Show only if chatting with them
-    fetch(`/messages/read/${currentUser._id}/${msg.sender}`, { method: 'PUT' });
+// Register form
+document.getElementById('registerForm').onsubmit = async e=>{
+  e.preventDefault();
+  const username=document.getElementById('regUsername').value;
+  const password=document.getElementById('regPassword').value;
+  const gender=document.getElementById('regGender').value;
+  const state=document.getElementById('regState').value;
+  const res=await fetch('http://localhost:5000/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password,gender,state})});
+  const data=await res.json();
+  if(res.status!==200) return alert(data.msg||'Registration failed');
+  alert('Registration successful! Please login.');
+  showLogin();
+}
+
+// Load users
+async function loadUsers(){
+  const res = await fetch(`http://localhost:5000/users/${currentUser._id}?state=${currentUser.state}`);
+  users = await res.json();
+  renderUsers();
+}
+
+function renderUsers(){
+  const usersDiv = document.getElementById('users');
+  usersDiv.innerHTML='<h2>Contacts</h2>';
+  users.forEach(u=>{
+    const div=document.createElement('div');
+    div.className='user';
+    div.innerHTML=`
+      <div class="info">
+        <span class="username">${u.username}</span>
+        <span class="state">${u.gender} ${u.online?'• Online':''}</span>
+      </div>
+      <div>
+        ${u.unreadCount?`<span class="unread">${u.unreadCount}</span>`:''}
+        ${u.online?'<span class="online"></span>':''}
+      </div>`;
+    div.onclick=()=>selectUser(u);
+    usersDiv.appendChild(div);
+  });
+}
+
+async function selectUser(user){
+  selectedUser=user;
+  document.getElementById('messages').innerHTML='';
+  const res=await fetch(`http://localhost:5000/messages/${currentUser._id}/${user._id}`);
+  const msgs=await res.json();
+  msgs.forEach(addMessage);
+  await fetch(`http://localhost:5000/messages/read/${currentUser._id}/${user._id}`,{method:'PUT'});
+  user.unreadCount=0;
+  renderUsers();
+  socket.emit('mark_as_read',{senderId:user._id,receiverId:currentUser._id});
+}
+
+function addMessage(msg){
+  const div=document.createElement('div');
+  div.className='message '+(msg.sender===currentUser._id?'sent':'received');
+  div.innerHTML=`${msg.message}<div class="timestamp">${new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>`;
+  document.getElementById('messages').appendChild(div);
+  document.getElementById('messages').scrollTop=document.getElementById('messages').scrollHeight;
+}
+
+// Send message
+const messageInput=document.getElementById('messageInput');
+document.getElementById('sendBtn').onclick=sendMessage;
+messageInput.onkeypress=()=>{ if(selectedUser) socket.emit('typing',{from:currentUser._id,to:selectedUser._id}); }
+function sendMessage(){
+  const text=messageInput.value;
+  if(!text || !selectedUser) return;
+  messageInput.value='';
+  fetch('http://localhost:5000/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senderId:currentUser._id,receiverId:selectedUser._id,message:text})})
+  .then(res=>res.json()).then(msg=>{
+    addMessage(msg);
+    socket.emit('send_message',{senderId:currentUser._id,receiverId:selectedUser._id,message:text});
+  });
+}
+
+// Socket events
+socket.on('new_message', msg=>{
+  if(selectedUser && msg.sender===selectedUser._id){
+    addMessage(msg);
+    socket.emit('mark_as_read',{senderId:selectedUser._id,receiverId:currentUser._id});
   } else {
-    unreadTotal++;
-    updateNavbarBadge();
+    const u=users.find(u=>u._id===msg.sender);
+    if(u) u.unreadCount=(u.unreadCount||0)+1;
+    renderUsers();
   }
-
-  loadUsers(); // ✅ update unread badges, etc.
 });
 
+socket.on('user_list_update', onlineIds=>{
+  users.forEach(u=>u.online=onlineIds.includes(u._id));
+  renderUsers();
+});
 
-  socket.on('messages_seen', ({ from }) => {
-    if (currentReceiver && currentReceiver._id === from) {
-      document.querySelectorAll('.message.right .seen-status').forEach(e => {
-        e.innerHTML = '✓✓';
-        e.style.color = '#2196f3';
-      });
-    }
-  });
+socket.on('messages_read', ({from})=>{
+  const u=users.find(u=>u._id===from);
+  if(u) u.unreadCount=0;
+  renderUsers();
+});
 
-  loadUsers();
-}
-
-async function loadUsers() {
-  const res = await fetch(`/users/${currentUser._id}?category=${filter.value}&state=${currentUser.state}`);
-  const users = await res.json();
-
-  userList.innerHTML = '';
-  unreadTotal = 0;
-
-  // 👉 Sort same-state users to the top
-  users.sort((a, b) => {
-    if (a.state === currentUser.state && b.state !== currentUser.state) return -1;
-    if (a.state !== currentUser.state && b.state === currentUser.state) return 1;
-    return 0;
-  });
-
-  users.forEach(u => {
-    if (u.unreadCount) unreadTotal += u.unreadCount;
-    const li = document.createElement('li');
-    const genderLabel = u.gender === 'male' ? 'M' : 'F';
-    const unreadDot = u.unreadCount > 0 ? `<span style="color:red;font-size:18px;">●</span>` : '';
-    li.innerHTML = `<span>${u.username} (${genderLabel}) ${unreadDot}</span><span style="font-size:12px;color:#555;">${u.state}</span>`;
-    li.onclick = () => openChat(u);
-    userList.appendChild(li);
-  });
-
-  updateNavbarBadge();
-  updateUnreadPanel(users);
-}
-
-
-async function openChat(u) {
-  currentReceiver = u;
-  chatWith.textContent = u.username;
-  chatBox.innerHTML = '';
-  chatMessage.value = '';
-  chatArea.style.display = 'block';
-  userList.style.display = 'none';
-  filter.style.display = 'none';
-
-  await fetch(`/messages/read/${currentUser._id}/${u._id}`, { method: 'PUT' });
-  const res = await fetch(`/messages/${currentUser._id}/${u._id}`);
-  const msgs = await res.json();
-  msgs.forEach(displayMessage);
-
-  unreadTotal = 0;
-  loadUsers();
-}
-
-function backToUsers() {
-  chatArea.style.display = 'none';
-  userList.style.display = 'block';
-  filter.style.display = 'block';
-  currentReceiver = null;
-}
-
-function formatTime(t) {
-  const d = t ? new Date(t) : new Date();
-  let h = d.getHours() % 12 || 12,
-      m = d.getMinutes().toString().padStart(2, '0'),
-      ap = d.getHours() >= 12 ? 'PM' : 'AM';
-  return `${h}:${m} ${ap}`;
-}
-
-function displayMessage(msg) {
-  const div = document.createElement('div');
-  const isMine = msg.sender === currentUser._id;
-  div.className = 'message ' + (isMine ? 'right' : 'left');
-
-  const seenStatus = isMine
-    ? `<span class="seen-status" style="float:right; font-size:14px; color: ${msg.seen ? '#2196f3' : '#aaa'};">
-        ${msg.seen ? '✓✓' : '✓'}
-      </span>`
-    : '';
-
-  div.innerHTML = `
-    <strong>${isMine ? 'You' : currentReceiver.username}:</strong> ${msg.message}
-    <span class="timestamp">${formatTime(msg.timestamp)} ${seenStatus}</span>
-  `;
-
-  chatBox.appendChild(div);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-function sendMessage() {
-  if (!currentReceiver) return alert('Select user');
-  const text = chatMessage.value.trim();
-  if (!text) return;
-
-  const msg = {
-    senderId: currentUser._id,
-    receiverId: currentReceiver._id,
-    message: text
-  };
-
-  socket.emit('send_message', msg); // 🚀 Send to server
- displayMessage({
-    sender: currentUser._id, // 👈 so the right-side logic works
-    receiver: currentReceiver._id,
-    message: text,
-    timestamp: new Date()
-  });
-
-  chatMessage.value = '';
-}
-
-// displayMessage(msg);
+// Typing indicator
+let typingTimeout;
+socket.on('typing', ({from})=>{
+  const u=users.find(u=>u._id===from);
+  if(selectedUser && selectedUser._id===from){
+    document.getElementById('typing').innerText=`${u.username} is typing...`;
+    clearTimeout(typingTimeout);
+    typingTimeout=setTimeout(()=>{document.getElementById('typing').innerText='';},2000);
+  }
+});
 </script>
 </body>
 </html>
